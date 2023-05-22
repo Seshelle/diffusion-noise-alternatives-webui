@@ -46,6 +46,10 @@ class Script(scripts.Script):
         p.image_mask = None
         p.latent_mask = None
         p.resize_mode = None
+        p.extra_generation_params["Alt noise type"] = "Plasma"
+        p.extra_generation_params["Turbulence"] = turbulence
+        p.extra_generation_params["Alt denoising strength"] = denoising
+        p.extra_generation_params["Alt noise multiplier"] = noise_mult
         p.initial_noise_multiplier = noise_mult
         p.denoising_strength = denoising
         
