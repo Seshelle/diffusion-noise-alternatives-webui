@@ -27,16 +27,40 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         with gr.Accordion('Plasma Noise', open=False):
             enabled = gr.Checkbox(label="Enabled", default=False)
-            turbulence = gr.Slider(minimum=0.05, maximum=10.0, step=0.05, label='Turbulence', value=2.75, elem_id=self.elem_id("turbulence"))
-            denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.9, elem_id=self.elem_id("denoising"))
-            noise_mult = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Noise multiplier', value=1.0, elem_id=self.elem_id("noise_mult"))
+            turbulence = gr.Slider(minimum=0.05, maximum=10.0, step=0.05, label='Turbulence', value=2.75,
+                                   elem_id=self.elem_id("turbulence"))
+            grain = gr.Slider(minimum=0, maximum=256, step=1, label='Graininess', value=96,
+                                   elem_id=self.elem_id("plasma_grain"))
+            denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.9,
+                                  elem_id=self.elem_id("denoising"))
+            noise_mult = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Noise multiplier', value=1.0,
+                                   elem_id=self.elem_id("noise_mult"))
+            with gr.Accordion('Level controls', open=False):
+                val_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Value Min",
+                                    elem_id=self.elem_id("plasma_val_min"))
+                val_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Value Max",
+                                    elem_id=self.elem_id("plasma_val_max"))
+                red_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Min",
+                                    elem_id=self.elem_id("plasma_red_min"))
+                red_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Max",
+                                    elem_id=self.elem_id("plasma_red_max"))
+                grn_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Min",
+                                    elem_id=self.elem_id("plasma_grn_min"))
+                grn_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Max",
+                                    elem_id=self.elem_id("plasma_grn_max"))
+                blu_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Min",
+                                    elem_id=self.elem_id("plasma_blu_min"))
+                blu_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Max",
+                                    elem_id=self.elem_id("plasma_blu_max"))
 
-        return [enabled, turbulence, denoising, noise_mult]
+        return [enabled, turbulence, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
+                blu_min, blu_max]
 
-    def process(self, p, enabled, turbulence, denoising, noise_mult):
+    def process(self, p, enabled, turbulence, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
+                grn_max, blu_min, blu_max):
         if not enabled:
             return None
-            
+
         global pixmap
         global xn
         xn = 0
@@ -48,11 +72,19 @@ class Script(scripts.Script):
         p.resize_mode = None
         p.extra_generation_params["Alt noise type"] = "Plasma"
         p.extra_generation_params["Turbulence"] = turbulence
+        p.extra_generation_params["Grain"] = grain
         p.extra_generation_params["Alt denoising strength"] = denoising
-        p.extra_generation_params["Alt noise multiplier"] = noise_mult
+        p.extra_generation_params["Value Min"] = val_min
+        p.extra_generation_params["Value Max"] = val_max
+        p.extra_generation_params["Red Min"] = red_min
+        p.extra_generation_params["Red Max"] = red_max
+        p.extra_generation_params["Green Min"] = grn_min
+        p.extra_generation_params["Green Max"] = grn_max
+        p.extra_generation_params["Blue Min"] = blu_min
+        p.extra_generation_params["Blue Max"] = blu_max
         p.initial_noise_multiplier = noise_mult
         p.denoising_strength = denoising
-        
+
         w = p.width
         h = p.height
         processing.fix_seed(p)
@@ -65,6 +97,65 @@ class Script(scripts.Script):
         else:
             w = h
 
+        # Clamp per channel and globally
+        clamp_v_min = val_min
+        clamp_v_max = val_max
+        clamp_r_min = red_min
+        clamp_r_max = red_max
+        clamp_g_min = grn_min
+        clamp_g_max = grn_max
+        clamp_b_min = blu_min
+        clamp_b_max = blu_max
+
+        # Handle value clamps
+        lv = 0
+        mv = 0
+        if clamp_v_min == -1:
+            lv = 0
+        else:
+            lv = clamp_v_min
+
+        if clamp_v_max == -1:
+            mv = 255
+        else:
+            mv = clamp_v_max
+
+        lr = 0
+        mr = 0
+        if clamp_r_min == -1:
+            lr = lv
+        else:
+            lr = clamp_r_min
+
+        if clamp_r_max == -1:
+            mr = mv
+        else:
+            mr = clamp_r_max
+
+        lg = 0
+        mg = 0
+        if clamp_g_min == -1:
+            lg = lv
+        else:
+            lg = clamp_g_min
+
+        if clamp_g_max == -1:
+            mg = mv
+        else:
+            mg = clamp_g_max
+
+        lb = 0
+        mb = 0
+        if clamp_b_min == -1:
+            lb = lv
+        else:
+            lb = clamp_b_min
+
+        if clamp_b_max == -1:
+            mb = mv
+        else:
+            mb = clamp_b_max
+
         roughness = turbulence
 
         def adjust(xa, ya, x, y, xb, yb):
@@ -72,7 +163,7 @@ class Script(scripts.Script):
             if (pixmap[x][y] == 0):
                 d = math.fabs(xa - xb) + math.fabs(ya - yb)
                 v = (pixmap[xa][ya] + pixmap[xb][yb]) / 2.0 + (random.random() - 0.555) * d * roughness
-                c = int(math.fabs(v + (random.random() - 0.5) * 96))
+                c = int(math.fabs(v + (random.random() - 0.5) * grain))
                 if c < 0:
                     c = 0
                 elif c > 255:
@@ -126,4 +217,3 @@ class Script(scripts.Script):
                 image.putpixel((x, y), (r[x][y], g[x][y], b[x][y]))
 
         p.init_images = [image]
-
