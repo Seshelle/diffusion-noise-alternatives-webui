@@ -1,4 +1,4 @@
-# diffustion-noise-alternatives-webui
+# diffusion-noise-alternatives-webui
 Creates alternative starting noise for stable diffusion txt2img, in this case plasma noise.
 
 # Usage
