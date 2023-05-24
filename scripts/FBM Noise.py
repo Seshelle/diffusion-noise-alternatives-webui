@@ -11,6 +11,9 @@ import PIL.Image
 from PIL import Image
 import copy
 
+global scalingW
+global scalingH
+global scaler
 
 class Script(scripts.Script):
 
@@ -57,6 +60,20 @@ class Script(scripts.Script):
         if not enabled:
             return None
 
+        global scalingW
+        global scalingH
+        global scaler
+        if p.enable_hr:
+            if p.hr_resize_x == 0 and p.hr_resize_y == 0:
+                scalingW = p.hr_scale
+                scalingH = p.hr_scale
+            else:
+                scalingW = p.hr_resize_x
+                scalingH = p.hr_resize_y
+            scaler = p.hr_upscaler
+        else:
+            scalingW = 0
+
         p.__class__ = processing.StableDiffusionProcessingImg2Img
         p.mask = None
         p.image_mask = None
@@ -77,7 +94,7 @@ class Script(scripts.Script):
         p.extra_generation_params["Blue Max"] = blu_max
 
         p.initial_noise_multiplier = noise_mult
-        p.denoising_strength = denoising
+        p.denoising_strength = int(denoising)
 
         processing.fix_seed(p)
         random.seed(p.seed)
@@ -166,5 +183,15 @@ class Script(scripts.Script):
                         final_pix = (old_pix[0] + new_pix[0], old_pix[1] + new_pix[1], old_pix[2] + new_pix[2])
                     final_image.putpixel((x, y), final_pix)
 
-        print("done")
         p.init_images = [final_image]
+
+    def postprocess(self, p, processed, enabled, octaves, smoothing, grain, octave_division, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
+                grn_max, blu_min, blu_max):
+        global scalingW
+        global scalingH
+        global scaler
+        if not enabled or scalingW == 0 or "alt_hires" in p.extra_generation_params:
+            return None
+        for i in range(len(processed.images)):
+            processed.images[i] = images.resize_image(0, processed.images[i], p.width * scalingW, p.height * scalingH, scaler)
+        p.extra_generation_params["alt_hires"] = scalingW

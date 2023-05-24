@@ -13,6 +13,10 @@ import copy
 global pixmap
 global xn
 
+global scalingW
+global scalingH
+global scaler
+
 
 class Script(scripts.Script):
 
@@ -61,6 +65,20 @@ class Script(scripts.Script):
         if not enabled:
             return None
 
+        global scalingW
+        global scalingH
+        global scaler
+        if p.enable_hr:
+            if p.hr_resize_x == 0 and p.hr_resize_y == 0:
+                scalingW = p.hr_scale
+                scalingH = p.hr_scale
+            else:
+                scalingW = p.hr_resize_x
+                scalingH = p.hr_resize_y
+            scaler = p.hr_upscaler
+        else:
+            scalingW = 0
+
         global pixmap
         global xn
         xn = 0
@@ -83,7 +101,7 @@ class Script(scripts.Script):
         p.extra_generation_params["Blue Min"] = blu_min
         p.extra_generation_params["Blue Max"] = blu_max
         p.initial_noise_multiplier = noise_mult
-        p.denoising_strength = denoising
+        p.denoising_strength = int(denoising)
 
         w = p.width
         h = p.height
@@ -217,3 +235,14 @@ class Script(scripts.Script):
                 image.putpixel((x, y), (r[x][y], g[x][y], b[x][y]))
 
         p.init_images = [image]
+
+    def postprocess(self, p, processed, enabled, turbulence, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
+                grn_max, blu_min, blu_max):
+        global scalingW
+        global scalingH
+        global scaler
+        if not enabled or scalingW == 0 or "alt_hires" in p.extra_generation_params:
+            return None
+        for i in range(len(processed.images)):
+            processed.images[i] = images.resize_image(0, processed.images[i], p.width * scalingW, p.height * scalingH, scaler)
+        p.extra_generation_params["alt_hires"] = scalingW
