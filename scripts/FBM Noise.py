@@ -94,7 +94,7 @@ class Script(scripts.Script):
         p.extra_generation_params["Blue Max"] = blu_max
 
         p.initial_noise_multiplier = noise_mult
-        p.denoising_strength = int(denoising)
+        p.denoising_strength = float(denoising)
 
         processing.fix_seed(p)
         random.seed(p.seed)
