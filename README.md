@@ -11,3 +11,4 @@ Creates alternative starting noise for stable diffusion txt2img, in this case pl
 # Known Issues
 
 * Does not work with UniPC sampler.
+* Only upscales result when used with hires fix. Does not denoise it.
