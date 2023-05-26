@@ -10,5 +10,4 @@ Creates alternative starting noise for stable diffusion txt2img, in this case pl
 
 # Known Issues
 
-* Does not work with UniPC sampler.
-* Only upscales result when used with hires fix. Does not denoise it.
+* Does not work with the UniPC sampler. This uses the img2img pipeline, which does not work with UniPc. The reason why you can use UniPC with img2img is because A1111 secretly changes your sampler to DDIM!!
