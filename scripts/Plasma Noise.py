@@ -3,7 +3,7 @@ import random
 
 import gradio as gr
 import modules.scripts as scripts
-from modules import deepbooru, images, processing, shared
+from modules import devices, deepbooru, images, processing, shared
 from modules.processing import Processed
 from modules.shared import opts, state
 
@@ -13,12 +13,15 @@ import copy
 global pixmap
 global xn
 
-global scalingW
-global scalingH
-global scaler
-
 
 class Script(scripts.Script):
+
+    def __init__(self):
+        self.scalingW = 0
+        self.scalingH = 0
+        self.hr_denoise = 0
+        self.hr_steps = 0
+        self.scaler = ""
 
     def title(self):
         return "Plasma Noise"
@@ -62,22 +65,23 @@ class Script(scripts.Script):
 
     def process(self, p, enabled, turbulence, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
                 grn_max, blu_min, blu_max):
-        if not enabled:
+        if not enabled or "alt_hires" in p.extra_generation_params:
             return None
 
-        global scalingW
-        global scalingH
-        global scaler
         if p.enable_hr:
+            self.hr_denoise = p.denoising_strength
+            self.hr_steps = p.hr_second_pass_steps
+            if self.hr_steps == 0:
+                self.hr_steps = p.steps
             if p.hr_resize_x == 0 and p.hr_resize_y == 0:
-                scalingW = p.hr_scale
-                scalingH = p.hr_scale
+                self.scalingW = p.hr_scale
+                self.scalingH = p.hr_scale
             else:
-                scalingW = p.hr_resize_x
-                scalingH = p.hr_resize_y
-            scaler = p.hr_upscaler
+                self.scalingW = p.hr_resize_x
+                self.scalingH = p.hr_resize_y
+            self.scaler = p.hr_upscaler
         else:
-            scalingW = 0
+            self.scalingW = 0
 
         global pixmap
         global xn
@@ -238,11 +242,16 @@ class Script(scripts.Script):
 
     def postprocess(self, p, processed, enabled, turbulence, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
                 grn_max, blu_min, blu_max):
-        global scalingW
-        global scalingH
-        global scaler
-        if not enabled or scalingW == 0 or "alt_hires" in p.extra_generation_params:
+        if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params:
             return None
         for i in range(len(processed.images)):
-            processed.images[i] = images.resize_image(0, processed.images[i], p.width * scalingW, p.height * scalingH, scaler)
-        p.extra_generation_params["alt_hires"] = scalingW
+            p.init_images[i] = (images.resize_image(0, processed.images[i], p.width * self.scalingW, p.height * self.scalingH, self.scaler))
+
+        p.extra_generation_params["alt_hires"] = self.scalingW
+        p.width = p.width * self.scalingW
+        p.height = p.height * self.scalingH
+        p.denoising_strength = self.hr_denoise
+        p.steps = self.hr_steps
+        devices.torch_gc()
+        new_p = processing.process_images(p)
+        processed.images = new_p.images
