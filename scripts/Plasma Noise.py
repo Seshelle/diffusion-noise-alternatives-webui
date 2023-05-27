@@ -180,6 +180,10 @@ class Script(scripts.Script):
 
         roughness = turbulence
 
+        def remap(v, low2, high2):
+            # low2 + (value - low1) * (high2 - low2) / (high1 - low1)
+            return int(low2 + v * (high2 - low2) / (255))
+
         def adjust(xa, ya, x, y, xb, yb):
             global pixmap
             if (pixmap[x][y] == 0):
@@ -236,7 +240,7 @@ class Script(scripts.Script):
 
         for y in range(ah):
             for x in range(aw):
-                image.putpixel((x, y), (r[x][y], g[x][y], b[x][y]))
+                image.putpixel((x, y), (remap(r[x][y], lr, mr), remap(g[x][y], lg, mg), remap(b[x][y], lb, mb)))
 
         p.init_images = [image]
 
