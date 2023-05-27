@@ -197,10 +197,10 @@ class Script(scripts.Script):
             p.init_images[i] = (images.resize_image(0, processed.images[i], p.width * self.scalingW, p.height * self.scalingH, self.scaler))
 
         p.extra_generation_params["alt_hires"] = self.scalingW
-        p.width = p.width * self.scalingW
-        p.height = p.height * self.scalingH
-        p.denoising_strength = self.hr_denoise
-        p.steps = self.hr_steps
+        p.width = int(p.width * self.scalingW)
+        p.height = int(p.height * self.scalingH)
+        p.denoising_strength = float(self.hr_denoise)
+        p.steps = int(self.hr_steps)
         devices.torch_gc()
         new_p = processing.process_images(p)
         processed.images = new_p.images
