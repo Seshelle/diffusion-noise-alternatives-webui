@@ -191,7 +191,7 @@ class Script(scripts.Script):
 
     def postprocess(self, p, processed, enabled, octaves, smoothing, grain, octave_division, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min,
                 grn_max, blu_min, blu_max):
-        if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params:
+        """if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params:
             return None
         for i in range(len(processed.images)):
             p.init_images[i] = (images.resize_image(0, processed.images[i], p.width * self.scalingW, p.height * self.scalingH, self.scaler))
@@ -202,5 +202,25 @@ class Script(scripts.Script):
         p.denoising_strength = float(self.hr_denoise)
         p.steps = int(self.hr_steps)
         devices.torch_gc()
+        new_p = processing.process_images(p)
+        processed.images = new_p.images"""
+        if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params or not p.enable_hr:
+            return None
+        devices.torch_gc()
+        latent_scale_mode = shared.latent_upscale_modes.get(self.scaler, None) if self.scaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+        for i in range(len(processed.images)):
+            if 'Latent' in self.scaler:
+                p.latent_scale_mode = latent_scale_mode
+                p.init_images[i] = processed.images[i]
+            else:
+                p.init_images[i] = (images.resize_image(0, processed.images[i], int(p.width * self.scalingW),
+                                                        int(p.height * self.scalingH), self.scaler))
+
+        p.extra_generation_params["alt_hires"] = self.scalingW
+        p.width = int(p.width * self.scalingW)
+        p.height = int(p.height * self.scalingH)
+        p.denoising_strength = self.hr_denoise
+        p.steps = self.hr_steps
+        p.resize_mode = 1 if 'Latent' in self.scaler else self.scaler
         new_p = processing.process_images(p)
         processed.images = new_p.images
