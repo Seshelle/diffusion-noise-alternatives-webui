@@ -92,6 +92,7 @@ class Script(scripts.Script):
         p.image_mask = None
         p.latent_mask = None
         p.resize_mode = None
+        p.inpaint_full_res = None
         p.extra_generation_params["Alt noise type"] = "Plasma"
         p.extra_generation_params["Turbulence"] = turbulence
         p.extra_generation_params["Grain"] = grain

@@ -83,6 +83,7 @@ class Script(scripts.Script):
         p.image_mask = None
         p.latent_mask = None
         p.resize_mode = None
+        p.inpaint_full_res = None
         p.extra_generation_params["Alt noise type"] = "FBM"
         p.extra_generation_params["Octaves"] = octaves
         p.extra_generation_params["Smoothing"] = smoothing
@@ -151,8 +152,8 @@ class Script(scripts.Script):
 
         for o in range(octaves):
             a = smoothing * pow(octave_division, octaves - o - 1)
-            s = int(square / a)
 
+            s = int(square / a)
             if s > square:
                 break
 
@@ -207,7 +208,9 @@ class Script(scripts.Script):
         if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params or not p.enable_hr:
             return None
         devices.torch_gc()
-        latent_scale_mode = shared.latent_upscale_modes.get(self.scaler, None) if self.scaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+        latent_scale_mode = shared.latent_upscale_modes.get(self.scaler,
+                                                            None) if self.scaler is not None else shared.latent_upscale_modes.get(
+            shared.latent_upscale_default_mode, "nearest")
         for i in range(len(processed.images)):
             if 'Latent' in self.scaler:
                 p.latent_scale_mode = latent_scale_mode
