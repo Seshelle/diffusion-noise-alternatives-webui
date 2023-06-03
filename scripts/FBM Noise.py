@@ -101,8 +101,7 @@ class Script(scripts.Script):
         p.initial_noise_multiplier = noise_mult
         p.denoising_strength = float(denoising)
 
-        processing.fix_seed(p)
-        random.seed(p.seed)
+        random.seed(p.all_seeds[0])
 
         width = p.width
         height = p.height

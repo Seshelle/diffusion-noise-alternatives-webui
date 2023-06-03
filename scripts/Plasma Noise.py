@@ -110,8 +110,7 @@ class Script(scripts.Script):
 
         w = p.width
         h = p.height
-        processing.fix_seed(p)
-        random.seed(p.seed)
+        random.seed(p.all_seeds[0])
         aw = copy.deepcopy(w)
         ah = copy.deepcopy(h)
         image = Image.new("RGB", (aw, ah))
