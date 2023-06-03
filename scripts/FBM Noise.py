@@ -139,9 +139,9 @@ class Script(scripts.Script):
         blue_range = min(hv, hb) - mb
 
         if grain > 0:
-            grain_image_r = [[0 for i in range(width)] for j in range(height)]
-            grain_image_g = [[0 for i in range(width)] for j in range(height)]
-            grain_image_b = [[0 for i in range(width)] for j in range(height)]
+            grain_image_r = [[0 for i in range(height)] for j in range(width)]
+            grain_image_g = [[0 for i in range(height)] for j in range(width)]
+            grain_image_b = [[0 for i in range(height)] for j in range(width)]
             for y in range(height):
                 for x in range(width):
                     grain_image_r[x][y] = int((random.random() - 0.5) * grain)
