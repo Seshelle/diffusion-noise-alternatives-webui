@@ -38,7 +38,7 @@ class Script(scripts.Script):
             "FBM Noise"
         ]
 
-        with gr.Accordion('Plasma Noise', open=False):
+        with gr.Accordion('Alternate Init Noise', open=False):
             enabled = gr.Checkbox(label="Enabled", default=False)
             noise_type = gr.Dropdown(label="Type", choices=[k for k in noise_types], type="index", value=next(iter(noise_types)))
 
