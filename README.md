@@ -13,7 +13,6 @@ Shared options between noise types:
 Plasma noise:
 * Turbulence: Size/frequency of the noise. Higher values mean more high-frequency noise.
 * Denoising: Like img2img denoising. A value of 0 will leave the init noise unchanged, while a value of 1 will fully denoise the init image.
-* Noise multiplier: How much default latent noise to add to the image. Value of 0 adds none, while a value of 1 will apply noise at full strength.
 
 FBM noise:
 * Octaves: The number of different frequencies/detail levels in the noise.
