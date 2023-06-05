@@ -43,14 +43,14 @@ class Script(scripts.Script):
             noise_type = gr.Dropdown(label="Type", choices=[k for k in noise_types], type="index", value=next(iter(noise_types)))
 
             # Plasma noise settings
-            turbulence = gr.Slider(minimum=0.05, maximum=10.0, step=0.05, label='Turbulence', value=2.75, elem_id=self.elem_id("turbulence"), visible=True, interactive=True)
+            turbulence = gr.Slider(minimum=0.05, maximum=10.0, step=0.05, label='Turbulence', value=4, elem_id=self.elem_id("turbulence"), visible=True, interactive=True)
 
             # FBM noise settings
             octaves = gr.Slider(minimum=1, maximum=32, step=1, label='Octaves', value=6, elem_id=self.elem_id("octaves"), visible=False, interactive=True)
             smoothing = gr.Slider(minimum=1, maximum=100, step=1, label='Smoothing', value=1, elem_id=self.elem_id("smoothing"), visible=False, interactive=True)
             octave_division = gr.Slider(minimum=1.0, maximum=10.0, step=0.01, label='Octave Division', value=2, elem_id=self.elem_id("octave_division"), visible=False, interactive=True)
 
-            grain = gr.Slider(minimum=0, maximum=256, step=1, label='Graininess', value=0, elem_id=self.elem_id("plasma_grain"))
+            grain = gr.Slider(minimum=0, maximum=256, step=1, label='Graininess', value=0, elem_id=self.elem_id("grain"))
             denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.9, elem_id=self.elem_id("denoising"))
             noise_mult = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Noise multiplier', value=1.0, elem_id=self.elem_id("noise_mult"))
 
