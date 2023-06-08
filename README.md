@@ -9,9 +9,12 @@ Shared options between noise types:
 ![Graininess Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/GrainCompare.png)
 * Denoising: Like img2img denoising. A value of 0 will leave the init noise unchanged, while a value of 1 will fully denoise the init image.
 * Noise multiplier: How much default latent noise to add to the image. Value of 0 adds none, while a value of 1 will apply noise at full strength.
-* Level controls: Determines the maximum and minimun values of color channels in the noise. Leave at -1 for no effect. Can be used to darken, lighten, and color grade an image.
+* Level controls: Can be used to darken, lighten, and color grade an image to create images not normally possible with stable diffusion. Options determine the maximum and minimun values of the RGB values in the noise. Brightness controls the value of all color channels, unless overriden by a specific RGB option. Leave options at -1 for default 0-256 range.
 ![Value Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/ValueCompare.png)
 ![Color Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/ColorGrade.png)
+* Contrast: Values above 1 make the brighter parts of the noise brighter and the darker parts darker. Values below 1 make the image more gray.
+* Greyscale: Makes the image black and white. (Usees only the red channel of the noise for all RGB channels)
+![Contrast Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/contrast.png)
 
 Plasma noise:
 * Turbulence: Size/frequency of the noise. Higher values mean more high-frequency noise.
