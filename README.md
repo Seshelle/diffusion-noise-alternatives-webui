@@ -13,7 +13,7 @@ Shared options between noise types:
 ![Value Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/ValueCompare.png)
 ![Color Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/ColorGrade.png)
 * Contrast: Values above 1 make the brighter parts of the noise brighter and the darker parts darker. Values below 1 make the image more gray.
-* Greyscale: Makes the image black and white. (Usees only the red channel of the noise for all RGB channels)
+* Greyscale: Makes the init noise black and white by using only the red channel of the image for all color channels.
 ![Contrast Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/contrast.png)
 
 Plasma noise:
