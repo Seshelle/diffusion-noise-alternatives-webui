@@ -50,19 +50,25 @@ class Script(scripts.Script):
             smoothing = gr.Slider(minimum=1, maximum=100, step=1, label='Smoothing', value=1, elem_id=self.elem_id("smoothing"), visible=False, interactive=True)
             octave_division = gr.Slider(minimum=1.0, maximum=10.0, step=0.01, label='Octave Division', value=2, elem_id=self.elem_id("octave_division"), visible=False, interactive=True)
 
-            grain = gr.Slider(minimum=0, maximum=256, step=1, label='Graininess', value=0, elem_id=self.elem_id("grain"))
+            grain = gr.Slider(minimum=0, maximum=256, step=1, label='Grain', value=0, elem_id=self.elem_id("grain"))
             denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.9, elem_id=self.elem_id("denoising"))
             noise_mult = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Noise multiplier', value=1.0, elem_id=self.elem_id("noise_mult"))
 
             with gr.Accordion('Level controls', open=False):
-                val_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Value Min", elem_id=self.elem_id("plasma_val_min"))
-                val_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Value Max", elem_id=self.elem_id("plasma_val_max"))
-                red_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Min", elem_id=self.elem_id("plasma_red_min"))
-                red_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Max", elem_id=self.elem_id("plasma_red_max"))
-                grn_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Min", elem_id=self.elem_id("plasma_grn_min"))
-                grn_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Max", elem_id=self.elem_id("plasma_grn_max"))
-                blu_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Min", elem_id=self.elem_id("plasma_blu_min"))
-                blu_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Max", elem_id=self.elem_id("plasma_blu_max"))
+                with gr.Row():
+                    val_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Brightness Min", elem_id=self.elem_id("plasma_val_min"))
+                    val_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Brightness Max", elem_id=self.elem_id("plasma_val_max"))
+                with gr.Row():
+                    red_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Min", elem_id=self.elem_id("plasma_red_min"))
+                    red_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Red Max", elem_id=self.elem_id("plasma_red_max"))
+                with gr.Row():
+                    grn_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Min", elem_id=self.elem_id("plasma_grn_min"))
+                    grn_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Green Max", elem_id=self.elem_id("plasma_grn_max"))
+                with gr.Row():
+                    blu_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Min", elem_id=self.elem_id("plasma_blu_min"))
+                    blu_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Blue Max", elem_id=self.elem_id("plasma_blu_max"))
+                contrast = gr.Slider(minimum=0, maximum=10, step=0.1, value=1, label="Contrast", elem_id=self.elem_id("noise_contrast"))
+                greyscale = gr.Checkbox(value=False, label="Greyscale", interactive=True, elem_id="noise_greyscale")
 
             def select_noise_type(noise_index):
                 return [gr.update(visible=noise_index == 0),
@@ -77,10 +83,15 @@ class Script(scripts.Script):
             )
 
         return [enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max]
+                blu_min, blu_max, contrast, greyscale]
+
+    def remap(self, v, low2, high2, contrast):
+        v = abs(v)
+        v = contrast * (v - 128) + 128
+        return int(low2 + v * (high2 - low2) / (255))
 
     def create_plasma(self, p, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
-                grn_max, blu_min, blu_max):
+                grn_max, blu_min, blu_max, contrast, greyscale):
         global pixmap
         global xn
         xn = 0
@@ -157,10 +168,6 @@ class Script(scripts.Script):
 
         roughness = turbulence
 
-        def remap(v, low2, high2):
-            # low2 + (value - low1) * (high2 - low2) / (high1 - low1)
-            return int(low2 + v * (high2 - low2) / (255))
-
         def adjust(xa, ya, x, y, xb, yb):
             global pixmap
             if (pixmap[x][y] == 0):
@@ -199,30 +206,38 @@ class Script(scripts.Script):
         subdivide(0, 0, w - 1, h - 1)
         r = copy.deepcopy(pixmap)
 
-        pixmap = [[0 for i in range(h)] for j in range(w)]
-        pixmap[0][0] = int(random.random() * 255)
-        pixmap[w - 1][0] = int(random.random() * 255)
-        pixmap[w - 1][h - 1] = int(random.random() * 255)
-        pixmap[0][h - 1] = int(random.random() * 255)
-        subdivide(0, 0, w - 1, h - 1)
-        g = copy.deepcopy(pixmap)
+        if not greyscale:
+            pixmap = [[0 for i in range(h)] for j in range(w)]
+            pixmap[0][0] = int(random.random() * 255)
+            pixmap[w - 1][0] = int(random.random() * 255)
+            pixmap[w - 1][h - 1] = int(random.random() * 255)
+            pixmap[0][h - 1] = int(random.random() * 255)
+            subdivide(0, 0, w - 1, h - 1)
+            g = copy.deepcopy(pixmap)
 
-        pixmap = [[0 for i in range(h)] for j in range(w)]
-        pixmap[0][0] = int(random.random() * 255)
-        pixmap[w - 1][0] = int(random.random() * 255)
-        pixmap[w - 1][h - 1] = int(random.random() * 255)
-        pixmap[0][h - 1] = int(random.random() * 255)
-        subdivide(0, 0, w - 1, h - 1)
-        b = copy.deepcopy(pixmap)
+            pixmap = [[0 for i in range(h)] for j in range(w)]
+            pixmap[0][0] = int(random.random() * 255)
+            pixmap[w - 1][0] = int(random.random() * 255)
+            pixmap[w - 1][h - 1] = int(random.random() * 255)
+            pixmap[0][h - 1] = int(random.random() * 255)
+            subdivide(0, 0, w - 1, h - 1)
+            b = copy.deepcopy(pixmap)
 
         for y in range(ah):
             for x in range(aw):
-                image.putpixel((x, y), (remap(r[x][y], lr, mr), remap(g[x][y], lg, mg), remap(b[x][y], lb, mb)))
+                if greyscale:
+                    channel_r = self.remap(r[x][y], lr, mr, contrast)
+                    final_pix = (channel_r, channel_r, channel_r)
+                else:
+                    final_pix = (self.remap(r[x][y], lr, mr, contrast),
+                                 self.remap(g[x][y], lg, mg, contrast),
+                                 self.remap(b[x][y], lb, mb, contrast))
+                image.putpixel((x, y), final_pix)
 
         return image
 
     def createFBM(self, p, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max):
+                blu_min, blu_max, contrast, greyscale):
 
         random.seed(p.all_seeds[0])
         width = p.width
@@ -255,9 +270,6 @@ class Script(scripts.Script):
         hb = 255
         if blu_max >= 0:
             hb = val_max
-        red_range = min(hv, hr) - mr
-        green_range = min(hv, hg) - mg
-        blue_range = min(hv, hb) - mb
 
         if grain > 0:
             grain_image_r = [[0 for i in range(height)] for j in range(width)]
@@ -266,8 +278,9 @@ class Script(scripts.Script):
             for y in range(height):
                 for x in range(width):
                     grain_image_r[x][y] = int((random.random() - 0.5) * grain)
-                    grain_image_g[x][y] = int((random.random() - 0.5) * grain)
-                    grain_image_b[x][y] = int((random.random() - 0.5) * grain)
+                    if not greyscale:
+                        grain_image_g[x][y] = int((random.random() - 0.5) * grain)
+                        grain_image_b[x][y] = int((random.random() - 0.5) * grain)
 
         final_image = Image.new("RGB", (width, height))
 
@@ -285,9 +298,10 @@ class Script(scripts.Script):
             octave_image = Image.new("RGB", (s, s))
             for y in range(s):
                 for x in range(s):
-                    r[x][y] = int(random.random() * red_range + mr)
-                    g[x][y] = int(random.random() * green_range + mg)
-                    b[x][y] = int(random.random() * blue_range + mb)
+                    r[x][y] = int(random.random() * 255)
+                    if not greyscale:
+                        g[x][y] = int(random.random() * 255)
+                        b[x][y] = int(random.random() * 255)
 
             for y in range(s):
                 for x in range(s):
@@ -302,17 +316,35 @@ class Script(scripts.Script):
                     amplitude = 1 / pow(2, o + 1)
                     new_pix = (int(new_pix[0] * amplitude), int(new_pix[1] * amplitude), int(new_pix[2] * amplitude))
                     if grain > 0 and o == octaves - 1:
-                        final_pix = (max(min(old_pix[0] + new_pix[0] + grain_image_r[x][y], hr), 0),
-                                     max(min(old_pix[1] + new_pix[1] + grain_image_g[x][y], hr), 0),
-                                     max(min(old_pix[2] + new_pix[2] + grain_image_b[x][y], hr), 0))
+                        if greyscale:
+                            channel_r = self.remap(old_pix[0] + new_pix[0] + grain_image_r[x][y], mr, hr, contrast)
+                            final_pix = (channel_r, channel_r, channel_r)
+                        else:
+                            final_pix = (self.remap(old_pix[0] + new_pix[0] + grain_image_r[x][y], mr, hr, contrast),
+                                         self.remap(old_pix[1] + new_pix[1] + grain_image_g[x][y], mg, hg, contrast),
+                                         self.remap(old_pix[2] + new_pix[2] + grain_image_b[x][y], mb, hb, contrast))
+                    elif o == octaves - 1:
+                        if greyscale:
+                            channel_r = self.remap(old_pix[0] + new_pix[0], mr, hr, contrast)
+                            final_pix = (channel_r, channel_r, channel_r)
+                        else:
+                            final_pix = (self.remap(old_pix[0] + new_pix[0], mr, hr, contrast),
+                                         self.remap(old_pix[1] + new_pix[1], mg, hg, contrast),
+                                         self.remap(old_pix[2] + new_pix[2], mb, hb, contrast))
                     else:
-                        final_pix = (old_pix[0] + new_pix[0], old_pix[1] + new_pix[1], old_pix[2] + new_pix[2])
+                        if greyscale:
+                            channel_r = old_pix[0] + new_pix[0]
+                            final_pix = (channel_r, channel_r, channel_r)
+                        else:
+                            final_pix = (old_pix[0] + new_pix[0],
+                                         old_pix[1] + new_pix[1],
+                                         old_pix[2] + new_pix[2])
                     final_image.putpixel((x, y), final_pix)
 
         return final_image
 
     def process(self, p, enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max):
+                blu_min, blu_max, contrast, greyscale):
         if not enabled or "alt_hires" in p.extra_generation_params:
             return None
 
@@ -357,19 +389,19 @@ class Script(scripts.Script):
             p.extra_generation_params["Alt noise type"] = "Plasma"
             p.extra_generation_params["Turbulence"] = turbulence
             image = self.create_plasma(p, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
-                grn_max, blu_min, blu_max)
+                grn_max, blu_min, blu_max, contrast, greyscale)
         if noise_type == 1:
             # fbm noise
             p.extra_generation_params["Alt noise type"] = "FBM"
             p.extra_generation_params["Octaves"] = octaves
             p.extra_generation_params["Smoothing"] = smoothing
             image = self.createFBM(p, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max)
+                blu_min, blu_max, contrast, greyscale)
 
         p.init_images = [image]
 
     def postprocess(self, p, processed, enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max):
+                blu_min, blu_max, contrast, greyscale):
         if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params or not p.enable_hr:
             return None
         devices.torch_gc()
