@@ -40,6 +40,7 @@ class Script(scripts.Script):
 
         with gr.Accordion('Alternate Init Noise', open=False):
             enabled = gr.Checkbox(label="Enabled", default=False)
+
             noise_type = gr.Dropdown(label="Type", choices=[k for k in noise_types], type="index", value=next(iter(noise_types)))
 
             # Plasma noise settings
@@ -54,7 +55,7 @@ class Script(scripts.Script):
             denoising = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.9, elem_id=self.elem_id("denoising"))
             noise_mult = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Noise multiplier', value=1.0, elem_id=self.elem_id("noise_mult"))
 
-            with gr.Accordion('Level controls', open=False):
+            with gr.Accordion('Color Adjustments', open=False):
                 with gr.Row():
                     val_min = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Brightness Min", elem_id=self.elem_id("plasma_val_min"))
                     val_max = gr.Slider(minimum=-1, maximum=255, step=1, value=-1, label="Brightness Max", elem_id=self.elem_id("plasma_val_max"))
@@ -70,11 +71,18 @@ class Script(scripts.Script):
                 contrast = gr.Slider(minimum=0, maximum=10, step=0.1, value=1, label="Contrast", elem_id=self.elem_id("noise_contrast"))
                 greyscale = gr.Checkbox(value=False, label="Greyscale", interactive=True, elem_id="noise_greyscale")
 
+            with gr.Row():
+                single_seed = gr.Checkbox(label="One seed for entire batch", info="speeds up noise generation for batch_size > 1, but noise seeds won't always match image seeds", default=False)
+                seed_choice = gr.Textbox(label="Seed override", value=-1, interactive=True, elem_id=self.elem_id("seed_choice"), visible=False)
+
             def select_noise_type(noise_index):
                 return [gr.update(visible=noise_index == 0),
                         gr.update(visible=noise_index == 1),
                         gr.update(visible=noise_index == 1),
                         gr.update(visible=noise_index == 1)]
+
+            def show_seed_choice(seed_checked):
+                return gr.update(visible=seed_checked)
 
             noise_type.change(
                 fn=select_noise_type,
@@ -82,8 +90,14 @@ class Script(scripts.Script):
                 outputs=[turbulence, octaves, smoothing, octave_division]
             )
 
+            single_seed.change(
+                fn=show_seed_choice,
+                inputs=single_seed,
+                outputs=seed_choice
+            )
+
         return [enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max, contrast, greyscale]
+                blu_min, blu_max, contrast, greyscale, single_seed, seed_choice]
 
     def remap(self, v, low2, high2, contrast):
         v = abs(v)
@@ -344,7 +358,7 @@ class Script(scripts.Script):
         return final_image
 
     def process(self, p, enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max, contrast, greyscale):
+                blu_min, blu_max, contrast, greyscale, single_seed, seed_choice):
         if not enabled or "alt_hires" in p.extra_generation_params:
             return None
 
@@ -385,8 +399,14 @@ class Script(scripts.Script):
         p.denoising_strength = float(denoising)
 
         img_num = p.batch_size
+        if single_seed:
+            img_num = 1
+
         p.init_images = []
-        init_seed = p.all_seeds[0]
+        if int(seed_choice) == -1 or not single_seed:
+            init_seed = p.all_seeds[0]
+        else:
+            init_seed = int(seed_choice)
 
         for img in range(img_num):
             real_seed = init_seed + img
@@ -407,7 +427,7 @@ class Script(scripts.Script):
             p.init_images.append(image)
 
     def postprocess(self, p, processed, enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max, contrast, greyscale):
+                blu_min, blu_max, contrast, greyscale, single_seed, seed_choice):
         if not enabled or self.scalingW == 0 or "alt_hires" in p.extra_generation_params or not p.enable_hr:
             return None
         devices.torch_gc()
