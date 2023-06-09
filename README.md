@@ -1,5 +1,5 @@
 # diffusion-noise-alternatives-webui
-Creates alternative starting noise for stable diffusion txt2img.
+Creates alternative starting noise for stable diffusion txt2img. Allows for the creation of images that are otherwise not possible with normal gaussian noise, such as very dark or light images.
 
 # Usage
 
