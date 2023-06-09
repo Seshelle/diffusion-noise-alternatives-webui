@@ -90,7 +90,7 @@ class Script(scripts.Script):
         v = contrast * (v - 128) + 128
         return int(low2 + v * (high2 - low2) / (255))
 
-    def create_plasma(self, p, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
+    def create_plasma(self, p, seed, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
                 grn_max, blu_min, blu_max, contrast, greyscale):
         global pixmap
         global xn
@@ -98,7 +98,7 @@ class Script(scripts.Script):
 
         w = p.width
         h = p.height
-        random.seed(p.all_seeds[0])
+        random.seed(seed)
         aw = copy.deepcopy(w)
         ah = copy.deepcopy(h)
         image = Image.new("RGB", (aw, ah))
@@ -236,10 +236,10 @@ class Script(scripts.Script):
 
         return image
 
-    def createFBM(self, p, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
+    def createFBM(self, p, seed, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
                 blu_min, blu_max, contrast, greyscale):
 
-        random.seed(p.all_seeds[0])
+        random.seed(seed)
         width = p.width
         height = p.height
         square = max(width, height)
@@ -384,21 +384,27 @@ class Script(scripts.Script):
         p.initial_noise_multiplier = noise_mult
         p.denoising_strength = float(denoising)
 
-        if noise_type == 0:
-            # plasma noise
-            p.extra_generation_params["Alt noise type"] = "Plasma"
-            p.extra_generation_params["Turbulence"] = turbulence
-            image = self.create_plasma(p, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
-                grn_max, blu_min, blu_max, contrast, greyscale)
-        if noise_type == 1:
-            # fbm noise
-            p.extra_generation_params["Alt noise type"] = "FBM"
-            p.extra_generation_params["Octaves"] = octaves
-            p.extra_generation_params["Smoothing"] = smoothing
-            image = self.createFBM(p, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
-                blu_min, blu_max, contrast, greyscale)
+        img_num = p.batch_size
+        p.init_images = []
+        init_seed = p.all_seeds[0]
 
-        p.init_images = [image]
+        for img in range(img_num):
+            real_seed = init_seed + img
+            if noise_type == 0:
+                # plasma noise
+                p.extra_generation_params["Alt noise type"] = "Plasma"
+                p.extra_generation_params["Turbulence"] = turbulence
+                image = self.create_plasma(p, real_seed, turbulence, grain, val_min, val_max, red_min, red_max, grn_min,
+                    grn_max, blu_min, blu_max, contrast, greyscale)
+            if noise_type == 1:
+                # fbm noise
+                p.extra_generation_params["Alt noise type"] = "FBM"
+                p.extra_generation_params["Octaves"] = octaves
+                p.extra_generation_params["Smoothing"] = smoothing
+                image = self.createFBM(p, real_seed, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
+                    blu_min, blu_max, contrast, greyscale)
+
+            p.init_images.append(image)
 
     def postprocess(self, p, processed, enabled, noise_type, turbulence, octaves, smoothing, octave_division, grain, denoising, noise_mult, val_min, val_max, red_min, red_max, grn_min, grn_max,
                 blu_min, blu_max, contrast, greyscale):
@@ -406,8 +412,9 @@ class Script(scripts.Script):
             return None
         devices.torch_gc()
 
+        p.init_images = []
         for i in range(len(processed.images)):
-            p.init_images[i] = processed.images[i]
+            p.init_images.append(processed.images[i])
 
         p.extra_generation_params["alt_hires"] = self.scalingW
         p.width = int(p.width * self.scalingW)
