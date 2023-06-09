@@ -432,20 +432,22 @@ class Script(scripts.Script):
             return None
         devices.torch_gc()
 
-        p.init_images = []
+        new_p = p
+        new_p.init_images = []
         for i in range(len(processed.images)):
-            p.init_images.append(processed.images[i])
+            new_p.init_images.append(processed.images[i])
 
-        p.extra_generation_params["alt_hires"] = self.scalingW
-        p.width = int(p.width * self.scalingW)
-        p.height = int(p.height * self.scalingH)
-        p.denoising_strength = self.hr_denoise
+        new_p.extra_generation_params["alt_hires"] = self.scalingW
+        new_p.width = int(new_p.width * self.scalingW)
+        new_p.height = int(new_p.height * self.scalingH)
+        new_p.denoising_strength = self.hr_denoise
         
-        if p.denoising_strength > 0:
-            p.steps = max(1, int(self.hr_steps / self.hr_denoise - 0.5))
+        if new_p.denoising_strength > 0:
+            new_p.steps = max(1, int(self.hr_steps / self.hr_denoise - 0.5))
         else:
-            p.steps = 0
+            new_p.steps = 0
 
         p.resize_mode = 3 if 'Latent' in self.scaler else 0
-        new_p = processing.process_images(p)
+        new_p.scripts = None
+        new_p = processing.process_images(new_p)
         processed.images = new_p.images
