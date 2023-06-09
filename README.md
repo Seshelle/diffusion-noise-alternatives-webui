@@ -15,6 +15,7 @@ Shared options between noise types:
 * Contrast: Values above 1 make the brighter parts of the noise brighter and the darker parts darker. Values below 1 make the image more gray.
 * Greyscale: Makes the init noise black and white by using only the red channel of the image for all color channels.
 ![Contrast Comparison](https://github.com/Seshelle/diffusion-noise-alternatives-webui/blob/main/images/contrast.png)
+* One seed for entire batch: When enabled, noise will only be generated once for the entire batch. This speeds up noise generation, but noise will use the seed override instead of the image seed. If the seed override is left at -1, the seed used will be the same as the first image in the batch.
 
 Plasma noise:
 * Turbulence: Size/frequency of the noise. Higher values mean more high-frequency noise.
