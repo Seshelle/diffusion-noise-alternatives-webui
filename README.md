@@ -2,7 +2,6 @@
 Creates alternative starting noise for stable diffusion txt2img.
 
 # Usage
-Only enable one noise type at a time.
 
 Shared options between noise types:
 * Graininess: Positive values add additional white noise on top of the noise after generation. Adds a grainy canvas effect to the final image.
